@@ -17,7 +17,7 @@ import (
 type Configuration struct {
     Download_path   string `json:"download_path"`
     Frontend_path   string `json:"frontend_path"`
-    Port            int    `json:"port"`
+    Port            string `json:"port"`
     Username        string `json:"username"`
     Password        string `json:"password"`
 }
@@ -50,7 +50,7 @@ func main() {
         negroni.NewStatic(http.Dir(Config.Frontend_path)),
     )
     n.UseHandler(router)
-    n.Run(":8080")
+    n.Run(":" + Config.Port)
 }
 
 func BasicAuth(h httprouter.Handle, user, pass []byte) httprouter.Handle {

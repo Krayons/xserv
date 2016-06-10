@@ -1,7 +1,7 @@
 {
     "download_path": "./downloads/",
     "frontend_path": "./static/",
-    "port": 8080,
+    "port": "8080",
     "username": "admin",
-    "password": "dezrcq500"
+    "password": "admin"
 }
