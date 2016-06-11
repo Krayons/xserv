@@ -44,6 +44,7 @@ func main() {
     router := httprouter.New()
     router.GET("/", HomeHandler)
     router.GET("/browse/*filepath", BasicAuth(DownloadHandler, user, pass))
+    router.GET("/downloads/*filepath", FileHandler)
     n := negroni.New(
         negroni.NewRecovery(),
         negroni.NewLogger(),
@@ -52,6 +53,11 @@ func main() {
     n.UseHandler(router)
     n.Run(":" + Config.Port)
 }
+
+func FileHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+    current_path := Config.Download_path + p[0].Value[1:]
+    http.ServeFile(rw, r, current_path)
+} 
 
 func BasicAuth(h httprouter.Handle, user, pass []byte) httprouter.Handle {
     return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
