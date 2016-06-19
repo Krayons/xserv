@@ -12,7 +12,13 @@ import (
     "strings"
     "encoding/base64"
     "bytes"
+    "time"
 )
+
+type TemplatePage struct {
+    GenerationTime  time.Duration
+    Files           []DownloadFile
+}
 
 type Configuration struct {
     Download_path   string `json:"download_path"`
@@ -92,8 +98,8 @@ func BasicAuth(h httprouter.Handle, user, pass []byte) httprouter.Handle {
 }
 
 func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+    start := time.Now()
     current_path := Config.Download_path + p[0].Value[1:]
-    fmt.Println(current_path)
     files, _ := ioutil.ReadDir(current_path)
     download_files := make([]DownloadFile, len(files))
     var count int = 0
@@ -115,7 +121,8 @@ func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
         return
     }
 
-    if err := tmpl.Execute(rw, download_files); err != nil {
+    templatePage := TemplatePage{time.Since(start), download_files}
+    if err := tmpl.Execute(rw, templatePage); err != nil {
         http.Error(rw, err.Error(), http.StatusInternalServerError)
     }
 }
