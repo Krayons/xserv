@@ -42,7 +42,7 @@ func main() {
     user := []byte(Config.Username)
     pass := []byte(Config.Password)
     router := httprouter.New()
-    router.GET("/", HomeHandler)
+    router.GET("/", RedirectHandler)
     router.GET("/browse/*filepath", BasicAuth(DownloadHandler, user, pass))
     router.GET("/downloads/*filepath", FileHandler)
     n := negroni.New(
@@ -52,6 +52,10 @@ func main() {
     )
     n.UseHandler(router)
     n.Run(":" + Config.Port)
+}
+
+func RedirectHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+    http.Redirect(rw, r, "/browse/", 301)
 }
 
 func FileHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -87,20 +91,9 @@ func BasicAuth(h httprouter.Handle, user, pass []byte) httprouter.Handle {
     }
 }
 
-func HomeHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-    tmpl, err := template.ParseFiles("./index_template.html")
-    if err != nil {
-        http.Error(rw, err.Error(), http.StatusInternalServerError)
-        return
-    }
-
-    if err := tmpl.Execute(rw, DownloadFile{}); err != nil {
-        http.Error(rw, err.Error(), http.StatusInternalServerError)
-    }
-}
-
 func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-    current_path := Config.Download_path + p[0].Value[1:]    
+    current_path := Config.Download_path + p[0].Value[1:]
+    fmt.Println(current_path)
     files, _ := ioutil.ReadDir(current_path)
     download_files := make([]DownloadFile, len(files))
     var count int = 0
