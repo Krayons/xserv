@@ -5,6 +5,7 @@ import (
     "os"
     "fmt"
     "net/http"
+    "gopkg.in/tylerb/graceful.v1"
     "github.com/julienschmidt/httprouter"
     "github.com/codegangsta/negroni"
     "io/ioutil"
@@ -57,7 +58,7 @@ func main() {
         negroni.NewStatic(http.Dir(Config.Frontend_path)),
     )
     n.UseHandler(router)
-    n.Run(":" + Config.Port)
+    graceful.Run(":" + Config.Port, 0, n)
 }
 
 func RedirectHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
