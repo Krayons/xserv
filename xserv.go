@@ -14,6 +14,7 @@ import (
     "encoding/base64"
     "bytes"
     "time"
+    "sort"
 )
 
 type TemplatePage struct {
@@ -34,6 +35,20 @@ type DownloadFile struct {
     Size            int64   `json:"size"`
     ModTime         int64   `json:"time"`  //Unix time
     IsDir           bool    `json:"isdir"`
+}
+
+type DownloadFiles []DownloadFile
+
+func (slice DownloadFiles) Len() int {
+    return len(slice)
+}
+
+func (slice DownloadFiles) Less(i, j int) bool {
+    return slice[i].ModTime < slice[j].ModTime
+}
+
+func (slice DownloadFiles) Swap(i, j int){
+    slice[i], slice[j] = slice[j], slice[i]
 }
 
 var Config Configuration
@@ -102,7 +117,7 @@ func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
     start := time.Now()
     current_path := Config.Download_path + p[0].Value[1:]
     files, _ := ioutil.ReadDir(current_path)
-    download_files := make([]DownloadFile, len(files))
+    download_files := make(DownloadFiles, len(files))
     var count int = 0
     for _, f := range files {
         var dl = DownloadFile{f.Name(), f.Size(), f.ModTime().Unix(), f.IsDir()}
@@ -113,7 +128,10 @@ func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
     //The sorting hat
     query := r.URL.Query()
     if val, ok := query["sort"]; ok{
-        fmt.Println(val[0]);
+        if (val[0] == "date"){
+            sort.Sort(download_files)
+        }
+        //fmt.Println(val[0]);
     }
 
     tmpl, err := template.ParseFiles("./downloads_template.html")
