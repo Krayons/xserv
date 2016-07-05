@@ -1,90 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Xserv | Downloads</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="keywords" content="" >
-  <meta name="description" content="" >
-  <meta name="author" content="">
+    <title>Xserv | Downloads</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="" >
+    <meta name="description" content="" >
+    <meta name="author" content="">
 
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-  <style type="text/css">
-    .row {
-      padding-top: 65px;
-    }
-  </style>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <style type="text/css">
+        .row {
+            padding-top: 65px;
+        }
+
+        #mobile-tbl {
+            display: none;
+        }
+
+        @media (max-width: 786px) {
+            #mobile-tbl {
+                display: block;
+            }
+            #desktop-tbl {
+                display: none;
+            }
+        }
+
+    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
   
 </head>
 <body>  
-  <div class="navbar navbar-default navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <a href="/" class="navbar-brand">Xserv</a>
-        </div>
-        <div class="navbar-collapse collapse" id="navbar-main">
-          <ul class="nav navbar-nav">
-            <li>
-              <a href="/browse/">All</a>
-            </li>
-            <li>
-              <a href="/browse/Movies/">Movies</a>
-            </li>
-            <li>
-              <a href="/browse/Shows/">TV Shows</a>
-            </li>
-            <li>
-              <a href="/browse/Games/">Games</a>
-            </li>
-            <li>
-              <a href="/browse/Music/">Music</a>
-            </li>
-          </ul>
 
-          <ul class="nav navbar-nav navbar-right">
-            <li><a href="#"><i class="fa fa-upload"></i> Upload</a></li>
-            <li><a href="#"><i class="fa fa-sign-out"></i> Log Out</a></li>
-          </ul>
-
+    <!-- Navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Xserv</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="/browse/">All</a>
+                    </li>
+                    <li>
+                        <a href="/browse/Movies/">Movies</a>
+                    </li>
+                    <li>
+                        <a href="/browse/Shows/">TV Shows</a>
+                    </li>
+                    <li>
+                        <a href="/browse/Games/">Games</a>
+                    </li>
+                    <li>
+                        <a href="/browse/Music/">Music</a>
+                    </li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="#"><i class="fa fa-sign-out"></i> Log Out</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
         </div>
-      </div>
-    </div>
+    </nav>
 
-  <div class="container">
-    <div class="row">
-        <div class="col-md-12">
-          <table class="table table-striped table-hover">
-            <thead>
-              <tr>
-                <th></th>
-                <th><a href="./?sort=name">Name</a></th>
-                <th><a href="./?sort=size">Size</a></th>
-                <th><a href="./?sort=date">Last Modified</a></th>
-              </tr>
-            </thead>
-            <tbody>
-              {{range $file := .Files}}
-              <tr>
-                  {{if $file.IsDir}}
-                      <td width="5%" style="text-align: right;"><i class="fa fa-folder"></i></td>
-                      <td width="60%"><a href="./{{.Name}}/">{{$file.Name}}</a></td>
-                      <td width="15%">Folder</td>
-                  {{else}}
-                      <td width="5%" style="text-align: right;"><i class="fa fa-file"></i></td>
-                      <td width="60%"><a href="#" data-group="file">{{$file.Name}}</a></td>
-                      <td width="15%" data-group="size">{{$file.Size}}</td>
-                  {{end}}
-                  <td width="20%" data-group="date">{{$file.ModTime}}</td>
-              </tr>
-            {{end}}
-            </tbody>
-          </table>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+
+                <!-- Mobile Table -->
+                <table id="mobile-tbl" class="table table-striped table-hover">
+                    <thead>
+                    <tr>
+                        <th>&nbsp;</th>
+                        <th><a href="./?sort=name">Name</a></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range $file := .Files}}
+                    <tr>
+                        {{if $file.IsDir}}
+                        <td width="5%" style="text-align: right;"><i class="fa fa-folder"></i></td>
+                        <td width="95%"><a href="./{{.Name}}/">{{$file.Name}}</a></td>
+                        {{else}}
+                        <td width="5%" style="text-align: right;"><i class="fa fa-file"></i></td>
+                        <td width="95%"><a href="#" data-group="file">{{$file.Name}}</a></td>
+                        {{end}}
+                    </tr>
+                    {{end}}
+                    </tbody>
+                </table>
+
+                <!-- Desktop Table -->
+                <table id="desktop-tbl" class="table table-striped table-hover">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th><a href="./?sort=name">Name</a></th>
+                        <th><a href="./?sort=size">Size</a></th>
+                        <th><a href="./?sort=date">Last Modified</a></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range $file := .Files}}
+                    <tr>
+                        {{if $file.IsDir}}
+                        <td width="5%" style="text-align: right;"><i class="fa fa-folder"></i></td>
+                        <td width="60%"><a href="./{{.Name}}/">{{$file.Name}}</a></td>
+                        <td width="15%">Folder</td>
+                        {{else}}
+                        <td width="5%"></td>
+                        <td width="60%"><a href="#" data-group="file">{{$file.Name}}</a></td>
+                        <td width="15%" data-group="size">{{$file.Size}}</td>
+                        {{end}}
+                        <td width="20%" data-group="date">{{$file.ModTime}}</td>
+                    </tr>
+                    {{end}}
+                    </tbody>
+                </table>
+
+            </div> <!-- /.col-md-12 -->
+        </div> <!-- /.row -->
+
+        <div>
+            Page generated in: {{.GenerationTime}}
         </div>
-    </div>
-    <div>
-      Page generated in: {{.GenerationTime}}
-    </div>
-  </div>
+
+    </div> <!-- /.container -->
+
 <script src="/js/jquery-2.1.3.js"></script>
 <script src="/js/bootstrap.js"></script>
 <script type="text/javascript">
@@ -103,21 +151,26 @@
       } while(Math.abs(bytes) >= thresh && u < units.length - 1);
       return bytes.toFixed(1)+' '+units[u];
   }
+
   function epoch2date(epoch){
-    var d = new Date(0); // The 0 there is the key, which sets the date to the epoch
-    d.setUTCSeconds(epoch);
-    return d
+      var d = new Date(0); // The 0 there is the key, which sets the date to the epoch
+      d.setUTCSeconds(epoch);
+      return d
   }
+
   $("a[data-group='file']").each(function (){
-    $(this).attr("href", "/downloads" + location.pathname.substring(7) + $(this).text());
+      $(this).attr("href", "/downloads" + location.pathname.substring(7) + $(this).text());
   });
-  $("td[data-group='size']").each(function (){
-    $(this).text(humanFileSize($(this).text(), true));
+
+      $("td[data-group='size']").each(function (){
+          $(this).text(humanFileSize($(this).text(), true));
   });
+
   $("td[data-group='date']").each(function (){
-    var nice_date = String(epoch2date($(this).text()));
-    $(this).text(nice_date.substring(3, 15));
+      var nice_date = String(epoch2date($(this).text()));
+      $(this).text(nice_date.substring(3, 15));
   });
+
 </script>
 </body>
 </html>
