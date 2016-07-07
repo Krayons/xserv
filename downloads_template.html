@@ -7,30 +7,10 @@
     <meta name="description" content="" >
     <meta name="author" content="">
 
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-    <style type="text/css">
-        .row {
-            padding-top: 65px;
-        }
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" type="text/css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
 
-        #mobile-tbl {
-            display: none;
-        }
-
-        @media (max-width: 786px) {
-            #mobile-tbl {
-                display: block;
-            }
-            #desktop-tbl {
-                display: none;
-            }
-        }
-
-        table {
-          overflow-x: hidden;
-        }
-    </style>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 </head>
 <body>  
 
@@ -44,13 +24,10 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="#">Xserv</a>
+                <a class="navbar-brand" href="/browse/">Xserv</a>
             </div>
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li>
-                        <a href="/browse/">All</a>
-                    </li>
                     <li>
                         <a href="/browse/Movies/">Movies</a>
                     </li>
@@ -87,10 +64,10 @@
                     {{range $file := .Files}}
                     <tr>
                         {{if $file.IsDir}}
-                        <td width="5%" style="text-align: right;"><i class="fa fa-folder"></i></td>
+                        <td width="5%" style="text-align: right;"><i class="fa fa-folder tbl-icon"></i></td>
                         <td width="95%"><a href="./{{.Name}}/">{{$file.Name}}</a></td>
                         {{else}}
-                        <td width="5%" style="text-align: right;"><i class="fa fa-file"></i></td>
+                        <td width="5%" style="text-align: right;"><i class="fa fa-file tbl-icon"></i></td>
                         <td width="95%"><a href="#" data-group="file">{{$file.Name}}</a></td>
                         {{end}}
                     </tr>
@@ -112,11 +89,11 @@
                     {{range $file := .Files}}
                     <tr>
                         {{if $file.IsDir}}
-                        <td width="5%" style="text-align: right;"><i class="fa fa-folder"></i></td>
+                        <td width="5%" style="text-align: right;"><i class="fa fa-folder tbl-icon"></i></td>
                         <td width="60%"><a href="./{{.Name}}/">{{$file.Name}}</a></td>
                         <td width="15%">Folder</td>
                         {{else}}
-                        <td width="5%" style="text-align: right;"><i class="fa fa-file"></i></td>
+                        <td width="5%" style="text-align: right;"><i class="fa fa-file tbl-icon"></i></td>
                         <td width="60%"><a href="#" data-group="file">{{$file.Name}}</a></td>
                         <td width="15%" data-group="size">{{$file.Size}}</td>
                         {{end}}
@@ -131,6 +108,8 @@
 
         <div>
             Page generated in: {{.GenerationTime}}
+            <br/>
+            <br/>
         </div>
 
     </div> <!-- /.container -->
