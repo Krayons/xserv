@@ -15,11 +15,12 @@ import (
     "bytes"
     "time"
     "sort"
+    "./xfile"
 )
 
 type TemplatePage struct {
     GenerationTime  time.Duration
-    Files           []DownloadFile
+    Files           []xfile.DownloadFile
 }
 
 type Configuration struct {
@@ -28,41 +29,6 @@ type Configuration struct {
     Port            string `json:"port"`
     Username        string `json:"username"`
     Password        string `json:"password"`
-}
-
-type DownloadFile struct {
-    Name            string  `json:"name"`
-    Size            int64   `json:"size"`
-    ModTime         int64   `json:"time"`  //Unix time
-    IsDir           bool    `json:"isdir"`
-}
-
-type AscDate []DownloadFile
-
-func (slice AscDate) Len() int {
-    return len(slice)
-}
-
-func (slice AscDate) Less(i, j int) bool {
-    return slice[i].ModTime < slice[j].ModTime
-}
-
-func (slice AscDate) Swap(i, j int){
-    slice[i], slice[j] = slice[j], slice[i]
-}
-
-type AscSize []DownloadFile
-
-func (slice AscSize) Len() int {
-    return len(slice)
-}
-
-func (slice AscSize) Less(i, j int) bool {
-    return slice[i].Size < slice[j].Size
-}
-
-func (slice AscSize) Swap(i, j int){
-    slice[i], slice[j] = slice[j], slice[i]
 }
 
 var Config Configuration
@@ -131,24 +97,26 @@ func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
     start := time.Now()
     current_path := Config.Download_path + p[0].Value[1:]
     files, _ := ioutil.ReadDir(current_path)
-    download_files := make([]DownloadFile, len(files))
+    download_files := make([]xfile.DownloadFile, len(files))
     var count int = 0
     for _, f := range files {
-        var dl = DownloadFile{f.Name(), f.Size(), f.ModTime().Unix(), f.IsDir()}
+        var dl = xfile.DownloadFile{f.Name(), f.Size(), f.ModTime().Unix(), f.IsDir()}
         download_files[count] = dl
         count++
     }
 
     //The sorting hat
     query := r.URL.Query()
-    if val, ok := query["sort"]; ok{
+    val, ok := query["sort"]
+    if (ok) {
         if (val[0] == "date"){
-            sort.Sort(AscDate(download_files))
+            sort.Stable(xfile.AscDate(download_files))
         }
         if (val[0] == "size"){
-            sort.Sort(AscSize(download_files))
+            sort.Stable(xfile.AscSize(download_files))
         }
-        //fmt.Println(val[0]);
+    } else{
+        sort.Stable(xfile.AcsName(download_files))
     }
 
     tmpl, err := template.ParseFiles("./downloads_template.html")
