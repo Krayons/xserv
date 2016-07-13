@@ -1,15 +1,29 @@
+
+
+/* general body */
+
 .row {
     padding-top: 65px;
 }
+
+/* end general body */
 
 /* navigation bar */
 
 .navbar-default {
     background-color: #298eea;
+    box-shadow: 0 0 20px 0 rgba(46, 46, 46, 0.45);
+    border: 0;
 }
 
 .navbar-default .navbar-brand {
     color: #fff;
+    font-weight: 600;
+}
+
+.navbar-default .navbar-brand:focus, .navbar-default .navbar-brand:hover {
+    color: #fff;
+    text-shadow: 0 0 7px rgba(255, 255, 255, 0.8);
 }
 
 .navbar-default .navbar-nav li a {
@@ -26,6 +40,11 @@
 
 .navbar-default .navbar-toggle:focus, .navbar-default .navbar-toggle:hover {
     background-color: transparent;
+}
+
+.navbar-default .navbar-nav li a:focus, .navbar-default .navbar-nav li a:hover {
+    color: #fff;
+    text-shadow: 0 0 7px rgba(255, 255, 255, 0.8);
 }
 
 /*end navigation bar */
