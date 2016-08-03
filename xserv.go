@@ -110,7 +110,7 @@ func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
     val, ok := query["sort"]
     if (ok) {
         if (val[0] == "date"){
-            sort.Stable(xfile.AscDate(download_files))
+            sort.Stable(xfile.DscDate(download_files))
         }
         if (val[0] == "size"){
             sort.Stable(xfile.AscSize(download_files))
