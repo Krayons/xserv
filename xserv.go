@@ -7,7 +7,7 @@ import (
     "net/http"
     "gopkg.in/tylerb/graceful.v1"
     "github.com/julienschmidt/httprouter"
-    "github.com/codegangsta/negroni"
+    "github.com/urfave/negroni"
     "io/ioutil"
     "html/template"
     "strings"
