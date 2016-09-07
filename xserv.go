@@ -19,36 +19,35 @@ import (
 	"github.com/urfave/negroni"
 )
 
-type TemplatePage struct {
+type templatePage struct {
 	GenerationTime time.Duration
 	Files          []xfile.DownloadFile
 }
 
-type Configuration struct {
-	Download_path string `json:"download_path"`
-	Frontend_path string `json:"frontend_path"`
-	Port          string `json:"port"`
-	Username      string `json:"username"`
-	Password      string `json:"password"`
+type configuration struct {
+	DownloadPath string `json:"downloadPath"`
+	FrontendPath string `json:"frontendPath"`
+	Port         string `json:"port"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
 }
 
-var Config Configuration
+var config configuration
 
 func main() {
 	file, _ := os.Open("config.json")
 	decoder := json.NewDecoder(file)
-	Config = Configuration{}
-	err := decoder.Decode(&Config)
+	config = configuration{}
+	err := decoder.Decode(&config)
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-	user := []byte(Config.Username)
-	pass := []byte(Config.Password)
 	router := httprouter.New()
-	router.GET("/", RedirectHandler)
-	router.GET("/browse/*filepath", BasicAuth(DownloadHandler, user, pass))
-	router.GET("/downloads/*filepath", FileHandler)
+	router.GET("/", redirectHandler)
+	router.GET("/browse/*filepath", loginOnly(downloadHandler))
+	router.GET("/downloads/*filepath", fileHandler)
 	router.GET("/login/", loginHandler)
+	router.GET("/logout/", logoutHandler)
 	router.POST("/login/", loginHandler)
 	if err != nil {
 		fmt.Println("error:", err)
@@ -56,55 +55,71 @@ func main() {
 	n := negroni.New(
 		negroni.NewRecovery(),
 		negroni.NewLogger(),
-		negroni.NewStatic(http.Dir(Config.Frontend_path)),
+		negroni.NewStatic(http.Dir(config.FrontendPath)),
 	)
-	rStore, err := redisstore.New(10, "tcp", "localhost:6379", "", []byte("secret123"))
+	rStore, err := redisstore.New(10, "tcp", "localhost:6379", "", []byte("supersecret"))
 	n.Use(sessions.Sessions("my_session", rStore))
 	n.UseHandler(router)
-	graceful.Run(":"+Config.Port, 0, n)
+	graceful.Run(":"+config.Port, 0, n)
 }
 
-func RedirectHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func logoutHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	session := sessions.GetSession(r)
+	session.Clear()
+	http.Redirect(rw, r, "/login/", 302)
+}
+func redirectHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	http.Redirect(rw, r, "/browse/", 301)
 }
 
 func loginHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	if r.Method == "POST" {
+		r.ParseForm()
+		if (r.Form["username"][0] == config.Username) && (r.Form["password"][0] == config.Password) {
+			session := sessions.GetSession(r)
+			session.Set("loggedin", "yes")
+			http.Redirect(rw, r, "/browse/", 302)
+		}
+
+	}
 	tmpl, err := template.ParseFiles("./login_template.html")
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	templatePage := TemplatePage{}
+	templatePage := templatePage{}
 	if err := tmpl.Execute(rw, templatePage); err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func FileHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	current_path := Config.Download_path + p[0].Value[1:]
-	http.ServeFile(rw, r, current_path)
+func fileHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	currentPath := config.DownloadPath + p[0].Value[1:]
+	http.ServeFile(rw, r, currentPath)
 }
 
-func BasicAuth(h httprouter.Handle, user, pass []byte) httprouter.Handle {
+func loginOnly(h httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		session := sessions.GetSession(r)
 		if session.Get("loggedin") != nil {
 			h(w, r, ps)
+			return
 		}
-		h(w, r, ps)
+		http.Redirect(w, r, "/login/?redirect="+r.RequestURI, 302)
 		return
 	}
 }
 
-func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func downloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	fmt.Println("hi")
 	start := time.Now()
-	current_path := Config.Download_path + p[0].Value[1:]
-	files, _ := ioutil.ReadDir(current_path)
-	download_files := make([]xfile.DownloadFile, len(files))
-	var count int = 0
+	currentPath := config.DownloadPath + p[0].Value[1:]
+	files, _ := ioutil.ReadDir(currentPath)
+	downloadFiles := make([]xfile.DownloadFile, len(files))
+	var count int
 	for _, f := range files {
 		var dl = xfile.DownloadFile{f.Name(), f.Size(), f.ModTime().Unix(), f.IsDir()}
-		download_files[count] = dl
+		downloadFiles[count] = dl
 		count++
 	}
 
@@ -113,13 +128,13 @@ func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	val, ok := query["sort"]
 	if ok {
 		if val[0] == "date" {
-			sort.Stable(xfile.DscDate(download_files))
+			sort.Stable(xfile.DscDate(downloadFiles))
 		}
 		if val[0] == "size" {
-			sort.Stable(xfile.AscSize(download_files))
+			sort.Stable(xfile.AscSize(downloadFiles))
 		}
 	} else {
-		sort.Stable(xfile.AcsName(download_files))
+		sort.Stable(xfile.AcsName(downloadFiles))
 	}
 
 	tmpl, err := template.ParseFiles("./downloads_template.html")
@@ -128,7 +143,7 @@ func DownloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 		return
 	}
 
-	templatePage := TemplatePage{time.Since(start), download_files}
+	templatePage := templatePage{time.Since(start), downloadFiles}
 	if err := tmpl.Execute(rw, templatePage); err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 	}
