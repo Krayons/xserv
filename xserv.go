@@ -12,10 +12,10 @@ import (
 
 	graceful "gopkg.in/tylerb/graceful.v1"
 
-	"./xfile"
 	"github.com/GoIncremental/negroni-sessions/redisstore"
 	sessions "github.com/goincremental/negroni-sessions"
 	"github.com/julienschmidt/httprouter"
+	"github.com/krayons/xserv/xfile"
 	"github.com/urfave/negroni"
 )
 
