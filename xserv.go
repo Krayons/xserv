@@ -82,7 +82,7 @@ func loginHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) 
 		}
 
 	}
-	tmpl, err := template.ParseFiles("./login_template.html")
+	tmpl, err := template.ParseFiles("./templates/login_template.html")
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
@@ -137,7 +137,7 @@ func downloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 		sort.Stable(xfile.AcsName(downloadFiles))
 	}
 
-	tmpl, err := template.ParseFiles("./downloads_template.html")
+	tmpl, err := template.ParseFiles("./templates/downloads_template.html")
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
