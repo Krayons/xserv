@@ -24,7 +24,7 @@ $(document).ready(function() {
     }
 
     $("a[data-group='file']").each(function (){
-        $(this).attr("href", "/downloads" + location.pathname.substring(7) + $(this).text());
+        $(this).attr("href", "/downloads/" + location.pathname.substring(7) + $(this).text());
     });
 
     $("td[data-group='size']").each(function (){

@@ -7,16 +7,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"time"
 
-	graceful "gopkg.in/tylerb/graceful.v1"
-
-	"github.com/GoIncremental/negroni-sessions/redisstore"
-	sessions "github.com/goincremental/negroni-sessions"
-	"github.com/julienschmidt/httprouter"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/krayons/xserv/xfile"
-	"github.com/urfave/negroni"
 )
 
 type templatePage struct {
@@ -34,6 +31,8 @@ type configuration struct {
 
 var config configuration
 
+var store = sessions.NewCookieStore([]byte("something-very-secret"))
+
 func main() {
 	file, _ := os.Open("config.json")
 	decoder := json.NewDecoder(file)
@@ -42,42 +41,32 @@ func main() {
 	if err != nil {
 		fmt.Println("error:", err)
 	}
-	router := httprouter.New()
-	router.GET("/", redirectHandler)
-	router.GET("/browse/*filepath", loginOnly(downloadHandler))
-	router.GET("/downloads/*filepath", fileHandler)
-	router.GET("/login/", loginHandler)
-	router.GET("/logout/", logoutHandler)
-	router.POST("/login/", loginHandler)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	n := negroni.New(
-		negroni.NewRecovery(),
-		negroni.NewLogger(),
-		negroni.NewStatic(http.Dir(config.FrontendPath)),
-	)
-	rStore, err := redisstore.New(10, "tcp", "localhost:6379", "", []byte("supersecret"))
-	n.Use(sessions.Sessions("my_session", rStore))
-	n.UseHandler(router)
-	graceful.Run(":"+config.Port, 0, n)
+	router := mux.NewRouter()
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	router.HandleFunc("/", redirectHandler)
+	router.PathPrefix("/browse").HandlerFunc(loggedinOnly(downloadHandler))
+	router.PathPrefix("/downloads").HandlerFunc(fileHandler)
+	router.HandleFunc("/login/", loginHandler)
+	router.HandleFunc("/logout/", logoutHandler)
+	err = http.ListenAndServe(":"+config.Port, router)
+	fmt.Println(err)
 }
 
-func logoutHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	session := sessions.GetSession(r)
-	session.Clear()
+func logoutHandler(rw http.ResponseWriter, r *http.Request) {
+	store.MaxAge(-1)
 	http.Redirect(rw, r, "/login/", 302)
 }
-func redirectHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	http.Redirect(rw, r, "/browse/", 301)
+func redirectHandler(rw http.ResponseWriter, r *http.Request) {
+	http.Redirect(rw, r, "/browse/", http.StatusPermanentRedirect)
 }
 
-func loginHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func loginHandler(rw http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		r.ParseForm()
 		if (r.Form["username"][0] == config.Username) && (r.Form["password"][0] == config.Password) {
-			session := sessions.GetSession(r)
-			session.Set("loggedin", "yes")
+			session, _ := store.Get(r, "session")
+			session.Values["logged_in"] = true
+			session.Save(r, rw)
 			http.Redirect(rw, r, "/browse/", 302)
 		}
 
@@ -93,27 +82,41 @@ func loginHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	}
 }
 
-func fileHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	currentPath := config.DownloadPath + p[0].Value[1:]
+func fileHandler(rw http.ResponseWriter, r *http.Request) {
+	re := regexp.MustCompile(`downloads\/(.*)`)
+	p := re.FindAllStringSubmatch(r.URL.Path, 1)
+	var currentPath string
+	if p != nil {
+		currentPath = config.DownloadPath + p[0][1]
+	} else {
+		currentPath = config.DownloadPath
+	}
 	http.ServeFile(rw, r, currentPath)
 }
 
-func loginOnly(h httprouter.Handle) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		session := sessions.GetSession(r)
-		if session.Get("loggedin") != nil {
-			h(w, r, ps)
-			return
+func loggedinOnly(f func(w http.ResponseWriter, r *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		session, _ := store.Get(r, "session")
+		isLoggedIn := session.Values["logged_in"]
+		fmt.Println(isLoggedIn)
+		if isLoggedIn != nil {
+			f(w, r)
+		} else {
+			http.Redirect(w, r, "/login/?redirect="+r.RequestURI, http.StatusTemporaryRedirect)
 		}
-		http.Redirect(w, r, "/login/?redirect="+r.RequestURI, 302)
-		return
 	}
 }
 
-func downloadHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	fmt.Println("hi")
+func downloadHandler(rw http.ResponseWriter, r *http.Request) {
 	start := time.Now()
-	currentPath := config.DownloadPath + p[0].Value[1:]
+	re := regexp.MustCompile(`browse\/(.*)`)
+	p := re.FindAllStringSubmatch(r.URL.Path, 1)
+	var currentPath string
+	if p != nil {
+		currentPath = config.DownloadPath + p[0][1]
+	} else {
+		currentPath = config.DownloadPath
+	}
 	files, _ := ioutil.ReadDir(currentPath)
 	downloadFiles := make([]xfile.DownloadFile, len(files))
 	var count int
